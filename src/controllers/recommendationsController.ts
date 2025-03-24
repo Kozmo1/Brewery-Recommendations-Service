@@ -4,16 +4,16 @@ import { config } from "../config/config";
 import { AuthRequest } from "../middleware/auth";
 
 interface TasteProfile {
-	primaryFlavor?: string;
-	sweetness?: string;
-	bitterness?: string;
+	PrimaryFlavor?: string;
+	Sweetness?: string;
+	Bitterness?: string;
 }
 
 interface InventoryItem {
-	id: number;
-	name: string;
-	tasteProfile: TasteProfile;
-	stockQuantity: number;
+	Id: number;
+	Name: string;
+	TasteProfile: TasteProfile;
+	StockQuantity: number;
 }
 
 export class RecommendationsController {
@@ -27,11 +27,14 @@ export class RecommendationsController {
 		try {
 			if (req.user) {
 				const userResponse = await axios.get<{
-					tasteProfile: TasteProfile;
-				}>(`${this.breweryApiUrl}/api/auth/${req.user.id}`);
-				const tasteProfile = userResponse.data.tasteProfile;
+					TasteProfile: TasteProfile;
+				}>(`${this.breweryApiUrl}/api/user/${req.user.id}`, {
+					headers: { Authorization: req.headers.authorization },
+				});
+				const tasteProfile = userResponse.data.TasteProfile;
 				const inventoryResponse = await axios.get<InventoryItem[]>(
-					`${this.breweryApiUrl}/api/inventory`
+					`${this.breweryApiUrl}/api/inventory`,
+					{ headers: { Authorization: req.headers.authorization } }
 				);
 				const recommendations = this.matchTasteProfile(
 					tasteProfile,
@@ -43,7 +46,8 @@ export class RecommendationsController {
 				});
 			} else {
 				const inventoryResponse = await axios.get<InventoryItem[]>(
-					`${this.breweryApiUrl}/api/inventory`
+					`${this.breweryApiUrl}/api/inventory`,
+					{ headers: { Authorization: req.headers.authorization } } // Add header
 				);
 				const defaultRecommendations = inventoryResponse.data.slice(
 					0,
@@ -75,16 +79,18 @@ export class RecommendationsController {
 	): Promise<void> {
 		try {
 			const productResponse = await axios.get<InventoryItem>(
-				`${this.breweryApiUrl}/api/inventory/${req.params.productId}`
+				`${this.breweryApiUrl}/api/inventory/${req.params.productId}`,
+				{ headers: { Authorization: req.headers.authorization } }
 			);
-			const productProfile = productResponse.data.tasteProfile;
+			const productProfile = productResponse.data.TasteProfile;
 			const inventoryResponse = await axios.get<InventoryItem[]>(
-				`${this.breweryApiUrl}/api/inventory`
+				`${this.breweryApiUrl}/api/inventory`,
+				{ headers: { Authorization: req.headers.authorization } }
 			);
 			const recommendations = this.matchTasteProfile(
 				productProfile,
 				inventoryResponse.data.filter(
-					(item) => item.id !== parseInt(req.params.productId)
+					(item) => item.Id !== parseInt(req.params.productId)
 				)
 			);
 			res.status(200).json({
@@ -111,18 +117,18 @@ export class RecommendationsController {
 	): InventoryItem[] {
 		return inventory
 			.filter((item) => {
-				const itemProfile = item.tasteProfile || {};
+				const itemProfile = item.TasteProfile || {};
 				return (
-					(tasteProfile.primaryFlavor &&
-						itemProfile.primaryFlavor ===
-							tasteProfile.primaryFlavor) ||
-					(tasteProfile.sweetness &&
-						itemProfile.sweetness === tasteProfile.sweetness) ||
-					(tasteProfile.bitterness &&
-						itemProfile.bitterness === tasteProfile.bitterness)
+					(tasteProfile.PrimaryFlavor &&
+						itemProfile.PrimaryFlavor ===
+							tasteProfile.PrimaryFlavor) ||
+					(tasteProfile.Sweetness &&
+						itemProfile.Sweetness === tasteProfile.Sweetness) ||
+					(tasteProfile.Bitterness &&
+						itemProfile.Bitterness === tasteProfile.Bitterness)
 				);
 			})
-			.sort((a, b) => b.stockQuantity - a.stockQuantity)
+			.sort((a, b) => b.StockQuantity - a.StockQuantity)
 			.slice(0, 5);
 	}
 }

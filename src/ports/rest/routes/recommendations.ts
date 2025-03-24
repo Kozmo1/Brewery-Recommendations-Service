@@ -13,8 +13,11 @@ router.get(
 		recommendationsController.getRecommendations(req, res, next)
 );
 
-router.get("/:productId", (req: Request, res: Response, next: NextFunction) =>
-	recommendationsController.getProductRecommendations(req, res, next)
+router.get(
+	"/:productId",
+	verifyToken, // Add middleware
+	(req: AuthRequest, res: Response, next: NextFunction) =>
+		recommendationsController.getProductRecommendations(req, res, next)
 );
 
 export = router;
