@@ -15,7 +15,7 @@ router.get(
 
 router.get(
 	"/:productId",
-	verifyToken, // Add middleware
+	verifyToken,
 	(req: AuthRequest, res: Response, next: NextFunction) =>
 		recommendationsController.getProductRecommendations(req, res, next)
 );
